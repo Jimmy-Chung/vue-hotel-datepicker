@@ -64,7 +64,7 @@
               .datepicker__week-name(v-for='dayName in i18n["day-names"]' v-text='dayName')
             .square(v-for='day in months[activeMonthIndex+n].days'
               @mouseover='hoveringDate = day.date'
-              )
+              ) 
               Day(
                 :is-open="isOpen"
                 :options="$props"
@@ -101,7 +101,6 @@
                   v-text='dayName'
                 )
               .square(v-for='(day, index) in months[n].days'
-                @mouseover='hoveringDate = day.date'
                 @focus='hoveringDate = day.date'
                 v-bind:key='index'
               )
@@ -113,7 +112,6 @@
                   :sortedDisabledDates='sortedDisabledDates'
                   :nextDisabledDate='nextDisabledDate'
                   :activeMonthIndex='activeMonthIndex'
-                  :hoveringDate='hoveringDate'
                   :tooltipMessage='tooltipMessage'
                   :dayNumber='getDay(day.date)'
                   :belongsToThisMonth='day.belongsToThisMonth'
@@ -121,361 +119,363 @@
                   :checkOut='checkOut'
                   :currentDateStyle='currentDateStyle'
                 )
-            .next--mobile(
-              @click='renderNextMonth' type="button"
-            )
+
 
 </template>
 
 <script>
-  import throttle from 'lodash.throttle';
-  import {directive as onClickOutside} from 'vue-on-click-outside';
-  import fecha from 'fecha';
+import throttle from 'lodash.throttle';
+import { directive as onClickOutside } from 'vue-on-click-outside';
+import fecha from 'fecha';
 
-  import Day from './Day.vue';
-  import DateInput from './DateInput.vue';
-  import Helpers from './helpers.js';
+import Day from './Day.vue';
+import DateInput from './DateInput.vue';
+import Helpers from './helpers.js';
 
-  const defaulti18n = {
-    night: 'Night',
-    nights: 'Nights',
-    'day-names': ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
-    'check-in': 'Check-in',
-    'check-out': 'Check-out',
-    'month-names': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-  };
+const defaulti18n = {
+  night: 'Night',
+  nights: 'Nights',
+  'day-names': ['Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'],
+  'check-in': 'Check-in',
+  'check-out': 'Check-out',
+  'month-names': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+};
 
-  export default {
-    name: 'HotelDatePicker',
+export default {
+  name: 'HotelDatePicker',
 
-    directives: {
-      'on-click-outside': onClickOutside
+  directives: {
+    'on-click-outside': onClickOutside
+  },
+
+  components: {
+    Day,
+    DateInput,
+  },
+
+  props: {
+    currentDateStyle: {
+      default: () => ({ border: "1px solid transparent" }),
     },
-
-    components: {
-      Day,
-      DateInput,
+    value: {
+      type: String
     },
+    startingDateValue: {
+      default: null,
+      type: Date
+    },
+    endingDateValue: {
+      default: null,
+      type: Date
+    },
+    format: {
+      default: 'YYYY-MM-DD',
+      type: String
+    },
+    startDate: {
+      default: function () {
+        return new Date()
+      },
+      type: [Date, String]
+    },
+    endDate: {
+      default: Infinity,
+      type: [Date, String, Number]
+    },
+    firstDayOfWeek: {
+      default: 0,
+      type: Number
+    },
+    minNights: {
+      default: 1,
+      type: Number
+    },
+    maxNights: {
+      default: null,
+      type: Number
+    },
+    disabledDates: {
+      default: function () {
+        return []
+      },
+      type: Array
+    },
+    disabledDaysOfWeek: {
+      default: function () {
+        return []
+      },
+      type: Array
+    },
+    allowedRanges: {
+      default: function () {
+        return []
+      },
+      type: Array
+    },
+    hoveringTooltip: {
+      default: true,
+      type: [Boolean, Function]
+    },
+    tooltipMessage: {
+      default: null,
+      type: String
+    },
+    i18n: {
+      default: () => defaulti18n,
+      type: Object
+    },
+    enableCheckout: {
+      default: false,
+      type: Boolean
+    },
+    singleDaySelection: {
+      default: false,
+      type: Boolean
+    },
+    showYear: {
+      default: false,
+      type: Boolean
+    },
+    closeDatepickerOnClickOutside: {
+      default: false,
+      type: Boolean,
+    },
+    displayClearButton: {
+      default: true,
+      type: Boolean,
+    }
+  },
 
-    props: {
-      currentDateStyle:{
-        default:() => ({border: "1px solid #00c690"}),
-      },
-      value: {
-        type: String
-      },
-      startingDateValue: {
-        default: null,
-        type: Date
-      },
-      endingDateValue: {
-        default: null,
-        type: Date
-      },
-      format: {
-        default: 'YYYY-MM-DD',
-        type: String
-      },
-      startDate: {
-        default: function () {
-          return new Date()
-        },
-        type: [Date, String]
-      },
-      endDate: {
-        default: Infinity,
-        type: [Date, String, Number]
-      },
-      firstDayOfWeek: {
-        default: 0,
-        type: Number
-      },
-      minNights: {
-        default: 1,
-        type: Number
-      },
-      maxNights: {
-        default: null,
-        type: Number
-      },
-      disabledDates: {
-        default: function () {
-          return []
-        },
-        type: Array
-      },
-      disabledDaysOfWeek: {
-        default: function () {
-          return []
-        },
-        type: Array
-      },
-      allowedRanges: {
-        default: function () {
-          return []
-        },
-        type: Array
-      },
-      hoveringTooltip: {
-        default: true,
-        type: [Boolean, Function]
-      },
-      tooltipMessage: {
-        default: null,
-        type: String
-      },
-      i18n: {
-        default: () => defaulti18n,
-        type: Object
-      },
-      enableCheckout: {
-        default: false,
-        type: Boolean
-      },
-      singleDaySelection: {
-        default: false,
-        type: Boolean
-      },
-      showYear: {
-        default: false,
-        type: Boolean
-      },
-      closeDatepickerOnClickOutside: {
-        default: true,
-        type: Boolean,
-      },
-      displayClearButton: {
-        default: true,
-        type: Boolean,
+  data () {
+    return {
+      hoveringDate: null,
+      checkIn: this.startingDateValue,
+      checkOut: this.endingDateValue,
+      months: [],
+      activeMonthIndex: 0,
+      nextDisabledDate: null,
+      show: true,
+      isOpen: false,
+      xDown: null,
+      yDown: null,
+      xUp: null,
+      yUp: null,
+      sortedDisabledDates: null,
+      screenSize: this.handleWindowResize(),
+    };
+  },
+
+  computed: {
+    showClearSelectionButton () {
+      return Boolean((this.checkIn || this.checkOut) && this.displayClearButton);
+    },
+  },
+
+  watch: {
+    isOpen (value) {
+      if (this.screenSize !== 'desktop') {
+        const bodyClassList = document.querySelector('body').classList;
+        if (value) {
+          setTimeout(() => {
+            let swiperWrapper = document.getElementById('swiperWrapper')
+            let monthHeihgt = document.querySelector('.datepicker__month').offsetHeight
+            swiperWrapper.scrollTop = this.activeMonthIndex * monthHeihgt
+          }, 200)
+        }
+        bodyClassList.remove('-overflow-hidden');
       }
     },
-
-    data() {
-      return {
-        hoveringDate: null,
-        checkIn: this.startingDateValue,
-        checkOut: this.endingDateValue,
-        months: [],
-        activeMonthIndex: 0,
-        nextDisabledDate: null,
-        show: true,
-        isOpen: false,
-        xDown: null,
-        yDown: null,
-        xUp: null,
-        yUp: null,
-        sortedDisabledDates: null,
-        screenSize: this.handleWindowResize(),
-      };
+    checkIn (newDate) {
+      this.$emit("check-in-changed", newDate)
     },
-
-    computed: {
-      showClearSelectionButton() {
-        return Boolean((this.checkIn || this.checkOut) && this.displayClearButton);
-      },
-    },
-
-    watch: {
-      isOpen(value) {
-        if (this.screenSize !== 'desktop') {
-          const bodyClassList = document.querySelector('body').classList;
-
-          if (value) {
-            bodyClassList.add('-overflow-hidden');
-            setTimeout(() => {
-              let swiperWrapper = document.getElementById('swiperWrapper')
-              let monthHeihgt = document.querySelector('.datepicker__month').offsetHeight
-              swiperWrapper.scrollTop = this.activeMonthIndex * monthHeihgt
-            },100)
-          }
-          else {
-            bodyClassList.remove('-overflow-hidden');
-          }
-        }
-      },
-      checkIn(newDate) {
-        this.$emit("check-in-changed", newDate)
-      },
-      checkOut(newDate) {
-
-        if (this.checkOut !== null && this.checkOut !== null) {
-          this.hoveringDate = null;
-          this.nextDisabledDate = null;
-          this.show = true;
-          this.parseDisabledDates();
-          this.reRender()
-          this.isOpen = false;
-        }
-
-        this.$emit("check-out-changed", newDate)
-      },
-
-    },
-
-    methods: {
-      ...Helpers,
-
-      formatDate(date) {
-        if (date) {
-          return fecha.format(date, this.format);
-        }
-        return '';
-      },
-
-      handleWindowResize() {
-        if (window.innerWidth < 480) {
-          this.screenSize = 'smartphone';
-        }
-        else if (window.innerWidth >= 480 && window.innerWidth < 768) {
-          this.screenSize = 'tablet';
-        }
-        else if (window.innerWidth >= 768) {
-          this.screenSize = 'desktop';
-        }
-
-        return this.screenSize;
-      },
-
-      onElementHeightChange(el, callback) {
-        let lastHeight = el.clientHeight;
-        let newHeight = lastHeight;
-
-        (function run() {
-          newHeight = el.clientHeight;
-
-          if (lastHeight !== newHeight) {
-            callback();
-          }
-
-          lastHeight = newHeight;
-
-          if (el.onElementHeightChangeTimer) {
-            clearTimeout(el.onElementHeightChangeTimer);
-          }
-
-          el.onElementHeightChangeTimer = setTimeout(run, 1000);
-        })();
-      },
-
-      emitHeighChangeEvent() {
-        this.$emit('height-changed');
-      },
-
-      reRender() {
-        this.show = false
-        this.$nextTick(() => {
-          this.show = true;
-        })
-      },
-
-      clearSelection() {
-        this.hoveringDate = null,
-        this.checkIn = null;
-        this.checkOut = null;
+    checkOut (newDate) {
+      if (this.checkOut !== null && this.checkOut !== null) {
+        this.hoveringDate = null;
         this.nextDisabledDate = null;
         this.show = true;
         this.parseDisabledDates();
         this.reRender()
-      },
-
-      hideDatepicker() {
         this.isOpen = false;
-      },
+      }
 
-      showDatepicker() {
-        this.isOpen = true;
-      },
+      this.$emit("check-out-changed", newDate)
+    },
 
-      toggleDatepicker() {
-        this.isOpen = !this.isOpen;
-      },
+  },
 
-      clickOutside() {
-        if (this.closeDatepickerOnClickOutside) {
-          this.hideDatepicker()
+  methods: {
+    ...Helpers,
+
+    formatDate (date) {
+      if (date) {
+        return fecha.format(date, this.format);
+      }
+      return '';
+    },
+
+    handleWindowResize () {
+      if (window.innerWidth < 480) {
+        this.screenSize = 'smartphone';
+      }
+      else if (window.innerWidth >= 480 && window.innerWidth < 768) {
+        this.screenSize = 'tablet';
+      }
+      else if (window.innerWidth >= 768) {
+        this.screenSize = 'desktop';
+      }
+
+      return this.screenSize;
+    },
+
+    onElementHeightChange (el, callback) {
+      let lastHeight = el.clientHeight;
+      let newHeight = lastHeight;
+
+      (function run () {
+        newHeight = el.clientHeight;
+
+        if (lastHeight !== newHeight) {
+          callback();
         }
-      },
 
-      handleDayClick(event) {
+        lastHeight = newHeight;
 
-        if (this.checkIn == null && this.singleDaySelection == false) {
-          this.checkIn = event.date;
-        } else if (this.singleDaySelection == true) {
-          this.checkIn = event.date
-          this.checkOut = event.date
-        }
-        else if (this.checkIn !== null && this.checkOut == null) {
-          this.checkOut = event.date;
-        }
-        else {
-          this.checkOut = null;
-          this.checkIn = event.date;
+        if (el.onElementHeightChangeTimer) {
+          clearTimeout(el.onElementHeightChangeTimer);
         }
 
-        this.nextDisabledDate = event.nextDisabledDate
-      },
+        el.onElementHeightChangeTimer = setTimeout(run, 1000);
+      })();
+    },
 
-      renderPreviousMonth() {
-        if (this.activeMonthIndex >= 1) {
-          this.activeMonthIndex--
-        }
-        else return
-      },
+    emitHeighChangeEvent () {
+      this.$emit('height-changed');
+    },
 
-      renderNextMonth: throttle(function throttleRenderNextMonth() {
-        if (this.activeMonthIndex < this.months.length - 2) {
-          this.activeMonthIndex++;
+    reRender () {
+      this.show = false
+      this.$nextTick(() => {
+        this.show = true;
+      })
+    },
+
+    clearSelection () {
+      this.hoveringDate = null,
+        this.checkIn = null;
+      this.checkOut = null;
+      this.nextDisabledDate = null;
+      this.show = true;
+      this.parseDisabledDates();
+      this.reRender()
+    },
+
+    hideDatepicker () {
+      this.isOpen = false;
+    },
+
+    showDatepicker () {
+      this.isOpen = true;
+    },
+
+    toggleDatepicker () {
+      this.isOpen = !this.isOpen;
+    },
+
+    clickOutside () {
+      if (this.closeDatepickerOnClickOutside) {
+        this.hideDatepicker()
+      }
+    },
+
+    handleDayClick (event) {
+      const tips = '不能选择最后一天可用时间作为起始日期'
+      if (this.checkIn === null) {
+        if (this.checkOut === null && (this.endDate !== Infinity && this.compareDay(event.date, this.endDate) == 0)) {
+          alert(tips)
           return
         }
-
-        let firstDayOfLastMonth;
-
-        if (this.screenSize !== 'desktop') {
-          firstDayOfLastMonth = this.months[this.months.length - 1].days
-            .filter((day) => day.belongsToThisMonth === true);
-        } else {
-          firstDayOfLastMonth = this.months[this.activeMonthIndex + 1].days
-            .filter((day) => day.belongsToThisMonth === true);
-        }
-
-        if (this.endDate !== Infinity) {
-          if (fecha.format(firstDayOfLastMonth[0].date, 'YYYYMM') ==
-            fecha.format(new Date(this.endDate), 'YYYYMM')) {
+        this.checkIn = event.date
+      } else {
+        if (this.checkOut !== null) {
+          if (this.endDate !== Infinity && this.compareDay(event.date, this.endDate) == 0) {
+            alert(tips)
             return
           }
+          this.checkOut = null
+          this.checkIn = event.date
+        } else {
+          this.checkOut = event.date
         }
+      }
+      // 考虑如果单选时限定最后日期的情况
+      if (this.singleDaySelection) {
+        this.checkOut = event.date
+      }
 
-        this.createMonth(
-          this.getNextMonth(
-            firstDayOfLastMonth[0].date
-          )
-        );
+      this.nextDisabledDate = event.nextDisabledDate
+    },
 
+    renderPreviousMonth () {
+      if (this.activeMonthIndex >= 1) {
+        this.activeMonthIndex--
+      }
+      else return
+    },
+
+    renderNextMonth: throttle(function throttleRenderNextMonth () {
+      if (this.activeMonthIndex < this.months.length - 2) {
         this.activeMonthIndex++;
-      }, 200),
+        return
+      }
 
-      setCheckIn(date) {
-        this.checkIn = date;
-      },
+      let firstDayOfLastMonth;
 
-      setCheckOut(date) {
-        this.checkOut = date;
-      },
+      if (this.screenSize !== 'desktop') {
+        firstDayOfLastMonth = this.months[this.months.length - 1].days
+          .filter((day) => day.belongsToThisMonth === true);
+      } else {
+        firstDayOfLastMonth = this.months[this.activeMonthIndex + 1].days
+          .filter((day) => day.belongsToThisMonth === true);
+      }
 
-      getDay(date) {
-        return fecha.format(date, 'D')
-      },
+      if (this.endDate !== Infinity) {
+        if (fecha.format(firstDayOfLastMonth[0].date, 'YYYYMM') ==
+          fecha.format(new Date(this.endDate), 'YYYYMM')) {
+          return
+        }
+      }
 
-      getMonth(date) {
-        return this.i18n["month-names"][fecha.format(date, 'M') - 1] + (this.showYear ? fecha.format(date, ' YYYY') : '');
-      },
+      this.createMonth(
+        this.getNextMonth(
+          firstDayOfLastMonth[0].date
+        )
+      );
+
+      this.activeMonthIndex++;
+    }, 200),
+
+    setCheckIn (date) {
+      this.checkIn = date;
+    },
+
+    setCheckOut (date) {
+      this.checkOut = date;
+    },
+
+    getDay (date) {
+      return fecha.format(date, 'D')
+    },
+
+    getMonth (date) {
+      return this.i18n["month-names"][fecha.format(date, 'M') - 1] + (this.showYear ? fecha.format(date, ' YYYY') : '');
+    },
 
 
-    createMonth(date){
+    createMonth (date) {
       const firstDay = this.getFirstDay(date, this.firstDayOfWeek);
-        let month = {
-          days: []
-        };
+      let month = {
+        days: []
+      };
 
       for (let i = 0; i < 42; i++) {
         month.days.push({
@@ -484,73 +484,73 @@
           isInRange: false,
         });
       }
-        this.months.push(month);
-      },
+      this.months.push(month);
+    },
+    // 获取不可用日期列表，并排序
+    parseDisabledDates () {
+      const sortedDates = [];
 
-      parseDisabledDates() {
-        const sortedDates = [];
-
-        for (let i = 0; i < this.disabledDates.length; i++) {
-          sortedDates[i] = new Date(this.disabledDates[i]);
-        }
-
-        sortedDates.sort((a, b) => a - b);
-
-        this.sortedDisabledDates = sortedDates;
+      for (let i = 0; i < this.disabledDates.length; i++) {
+        sortedDates[i] = new Date(this.disabledDates[i]);
       }
-    },
 
-    beforeMount() {
-      fecha.i18n = {
-        dayNames: this.i18n['day-names'],
-        dayNamesShort: this.shortenString(this.i18n['day-names'], 3),
-        monthNames: this.i18n['month-names'],
-        monthNamesShort: this.shortenString(this.i18n['month-names'], 3),
-        amPm: ['am', 'pm'],
-        // D is the day of the month, function returns something like...  3rd or 11th
-        DoFn: function (D) {
-          return D + ['th', 'st', 'nd', 'rd'][D % 10 > 3 ? 0 : (D - D % 10 !== 10) * D % 10];
-        }
-      };
-        if(this.checkIn &&
-        (this.getMonthDiff(this.getNextMonth(new Date(this.startDate)), this.checkIn) > 0 ||
-        this.getMonthDiff(this.startDate, this.checkIn) > 0)){
-          this.createMonth(new Date(this.startDate));
-          const count = this.getMonthDiff(this.startDate, this.checkIn)
-          let nextMonth = new Date(this.startDate)
-          for(let i = 0; i <= count; i++){
-            let tempNextMonth = this.getNextMonth(nextMonth)
-            this.createMonth(tempNextMonth)
-            nextMonth = tempNextMonth
-          }
-          if(this.checkOut && this.getMonthDiff(this.checkIn,this.checkOut) > 0){
-            this.createMonth(this.getNextMonth(nextMonth))
-            this.activeMonthIndex = 1
-          }
-          this.activeMonthIndex += count
-      }else{
-        this.createMonth(new Date(this.startDate));
-        this.createMonth(this.getNextMonth(new Date(this.startDate)));
+      sortedDates.sort((a, b) => a - b);
+
+      this.sortedDisabledDates = sortedDates;
+    }
+  },
+
+  beforeMount () {
+    fecha.i18n = {
+      dayNames: this.i18n['day-names'],
+      dayNamesShort: this.shortenString(this.i18n['day-names'], 3),
+      monthNames: this.i18n['month-names'],
+      monthNamesShort: this.shortenString(this.i18n['month-names'], 3),
+      amPm: ['am', 'pm'],
+      // D is the day of the month, function returns something like...  3rd or 11th
+      DoFn: function (D) {
+        return D + ['th', 'st', 'nd', 'rd'][D % 10 > 3 ? 0 : (D - D % 10 !== 10) * D % 10];
       }
-      this.parseDisabledDates();
-    },
+    };
+    if (this.checkIn &&
+      (this.getMonthDiff(this.getNextMonth(new Date(this.startDate)), this.checkIn) > 0 ||
+        this.getMonthDiff(this.startDate, this.checkIn) > 0)) {
+      this.createMonth(new Date(this.startDate));
+      const count = this.getMonthDiff(this.startDate, this.checkIn)
+      let nextMonth = new Date(this.startDate)
+      for (let i = 0; i <= count; i++) {
+        let tempNextMonth = this.getNextMonth(nextMonth)
+        this.createMonth(tempNextMonth)
+        nextMonth = tempNextMonth
+      }
+      if (this.checkOut && this.getMonthDiff(this.checkIn, this.checkOut) > 0) {
+        this.createMonth(this.getNextMonth(nextMonth))
+        this.activeMonthIndex = 1
+      }
+      this.activeMonthIndex += count
+    } else {
+      this.createMonth(new Date(this.startDate));
+      this.createMonth(this.getNextMonth(new Date(this.startDate)));
+    }
+    this.parseDisabledDates();
+  },
 
-    mounted() {
-      document.addEventListener('touchstart', this.handleTouchStart, false);
-      document.addEventListener('touchmove', this.handleTouchMove, false);
-      window.addEventListener('resize', this.handleWindowResize);
+  mounted () {
+    document.addEventListener('touchstart', this.handleTouchStart, false);
+    document.addEventListener('touchmove', this.handleTouchMove, false);
+    window.addEventListener('resize', this.handleWindowResize);
 
-      this.onElementHeightChange(document.body, () => {
-        this.emitHeighChangeEvent();
-      });
-    },
+    this.onElementHeightChange(document.body, () => {
+      this.emitHeighChangeEvent();
+    });
+  },
 
-    destroyed() {
-      window.removeEventListener('touchstart', this.handleTouchStart);
-      window.removeEventListener('touchmove', this.handleTouchMove);
-      window.removeEventListener('resize', this.handleWindowResize);
-    },
-  };
+  destroyed () {
+    window.removeEventListener('touchstart', this.handleTouchStart);
+    window.removeEventListener('touchmove', this.handleTouchMove);
+    window.removeEventListener('resize', this.handleWindowResize);
+  },
+};
 </script>
 
 <style lang="scss">
@@ -562,7 +562,7 @@
     $gray: #424b53;
     $primary-text-color: #35343d;
     $lightest-gray: #f3f5f8;
-    $primary-color: #00ca9d;
+    $primary-color: #fdd555;
     $primary-color: $primary-color;
     $medium-gray: #999999;
     $light-gray: #d7d9e2;

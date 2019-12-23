@@ -209,18 +209,6 @@ export default {
         return true;
       }
     },
-
-    compareDay(day1, day2) {
-      const date1 = fecha.format(new Date(day1), 'YYYYMMDD');
-      const date2 = fecha.format(new Date(day2), 'YYYYMMDD');
-
-      if (date1 > date2) { return 1; }
-
-      else if (date1 == date2) { return 0; }
-
-      else if (date1 < date2) { return -1; }
-    },
-
     dayClicked(date) {
       if (this.isDisabled || !this.isClickable()) {
         return
@@ -238,7 +226,7 @@ export default {
           Infinity;
 
         if (this.options.enableCheckout) { nextDisabledDate = Infinity; }
-
+        
         this.$emit('day-clicked', { date, nextDisabledDate });
       }
     },
@@ -289,8 +277,10 @@ export default {
     },
 
     disableNextDays(){
+      // 如果用户不进行选中日期操作，并nextDisabledDate不传入值，那么nextDisabledDate值应该为null
+      // 这个时候不能去置灰
       if ( !this.isDateLessOrEquals(this.date, this.nextDisabledDate)
-            && this.nextDisabledDate !== Infinity) {
+            && this.nextDisabledDate !== Infinity && this.nextDisabledDate !== null) {
               this.isDisabled = true;
       }
       else if ( this.isDateLessOrEquals(this.date, this.checkIn) ) {
